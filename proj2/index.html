@@ -1,7 +1,287 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+    <style>
+        body {
+            padding: 100px;
+            width: 1000px;
+            margin: auto;
+            text-align: left;
+            font-weight: 300;
+            font-family: 'Open Sans', sans-serif;
+            color: #121212;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            font-family: 'Source Sans Pro', sans-serif;
+        }
+    </style>
+    <title>CS 184 Mesh Editor</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2020</h1>
+<h1 align="middle">Project 2: Mesh Editor</h1>
+<h2 align="middle">Cyrus Hamirani, Abhik Ahuja, CS184-??</h2>
+
+<br><br>
+
+<div>
+
+    <h2 align="middle">Overview</h2>
+    <p>Give a high-level overview of what you implemented in this project. Think about what you've built as a whole.
+        Share your thoughts on what interesting things you've learned from completing the project.</p>
+
+    <h2 align="middle">Section I: Bezier Curves and Surfaces</h2>
+
+    <h3 align="middle">Part 1: Bezier curves with 1D de Casteljau subdivision</h3>
+
+    <p>de Casteljau's algorithm is a recursive algorithm for generating Bezier curves. This algorithm takes as input n
+        control points, as well as a parameter t.
+        It returns a point on the Bezier curve defined by the provided control points. At each step of the algorithm,
+        the n control points are grouped two at a time
+        from left to right and linearly interpolated, with the interpolation weighted according to the provided t
+        parameter. This provides n-1 intermediate control points. The algorithm repeats recursively
+        on the intermediate control points until only one point is returned; this point lies on the Bezier curve. By
+        running this algorithm many times with different values of t,
+        we can generate a Bezier curve.
+    </p>
+
+    <div align="middle">
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/l1.png" align="middle" width="400px"/>
+                    <figcaption align="middle">Custom Bezier curve - 1st round of points calculated by de Casteljau's.
+                    </figcaption>
+                </td>
+                <td>
+                    <img src="images/l2.png" align="middle" width="400px"/>
+                    <figcaption align="middle">2nd round of points calculated by de Casteljau's.</figcaption>
+                </td>
+            </tr>
+            <br>
+            <tr>
+                <td>
+                    <img src="images/l3.png" align="middle" width="400px"/>
+                    <figcaption align="middle">3rd round of points calculated by de Casteljau's.</figcaption>
+                </td>
+                <td>
+                    <img src="images/l4.png" align="middle" width="400px"/>
+                    <figcaption align="middle">4th round of points calculated by de Casteljau's.</figcaption>
+                </td>
+            <tr>
+                <td>
+                    <img src="images/l5.png" align="middle" width="400px"/>
+                    <figcaption align="middle">5th round of points calculated by de Casteljau's.</figcaption>
+                </td>
+                <td>
+                    <img src="images/diff.png" align="middle" width="400px"/>
+                    <figcaption align="middle">Bezier curve from before with modified initial control points, and
+                        different t value for interpolation.
+                    </figcaption>
+                </td>
+            </tr>
+            </tr>
+        </table>
+    </div>
+
+
+    <h3 align="middle">Part 2: Bezier surfaces with separable 1D de Casteljau subdivision</h3>
+
+    <p>de Casteljau's algorithm can be extended to create Bezier surfaces in three dimensions. To do so, we take in an
+        input of k arrays
+        which contain n three-dimensional points each, and two parameters, u and v. For each of the k arrays, we
+        evaluate a point on the Bezier curve
+        defined by the n points in the array and the parameter u, as in part 1. Then, once we have these k points from
+        the k Bezier curves, we use these
+        k points as control points and the parameter v to generate a point on a Bezier curve which goes through the ones
+        defined by the arrays. This generated
+        point lies on the Bezier surface. We can run this algorithm many times for different values of u and v to create
+        a Bezier surface.</p>
+
+    <div align="middle">
+        <td align="middle">
+            <img src="images/teapotbez.png" align="middle" width="400px"/>
+            <figcaption align="middle">Teapot rendered with Bezier surfaces, using de Casteljau.</figcaption>
+        </td>
+    </div>
+
+    <h2 align="middle">Section II: Sampling</h2>
+
+    <h3 align="middle">Part 3: Average normals for half-edge meshes</h3>
+    <p> We implemented the area-weighted vertex normals by first calculating the normals of each of the faces around the
+        vertex. For this we traversed the faces around the vertex using the halfedges and then used the built-in normal
+        function for each face. Since each normal was not normalized, we could use it to calculate the area of the face
+        by using the formula: 1/2 * (magnitude of normal vector). <br/><br/>
+
+        We then added the area * normal vector of each face to a cumulative vertex normal, then normalized and returned
+        the result. </p>
+
+    <div align="middle">
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/Capture%20d’écran%202022-02-28%20à%2013.52.51.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Teapot with default flat shading.</figcaption>
+                </td>
+                <td>
+                    <img src="images/Capture%20d’écran%202022-02-28%20à%2013.53.00.png" align="middle" width="450px"/>
+                    <figcaption align="middle">Teapot with Phong shading.</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h3 align="middle">Part 4: Half-edge flip</h3>
+
+    <p> Implementation of the edge flipping task was quite difficult at first. We had trouble understanding exactly what
+        needed to be changed in all of the mesh elements,
+        and we attempted to implement this entire task without consulting rigorous visual aid with labeled elements. As
+        a result, our code quite unstructured, messy, and difficult to debug.
+        The most important change we made in our approach after having frustration debugging was to use a labeled visual
+        guide of the half-edges and vertices. We rewrote the method from scratch
+        and the first thing we did was put all of the mesh elements from the diagram directly into the code. This is in
+        contrast to what we were doing originally, which was essentially to just
+        compute mesh elements on the fly from the flipped edge - a needlessly complicated process. Naturally,
+        calculating all relevant mesh elements up front was a massive step-up in terms of readability and simplicity and
+        made implementation of this method quite simple. </p>
+
+    <div align="middle">
+        <td align="middle">
+            <img src="images/edge_flip_diagram.png" align="middle" width="700px"/>
+            <figcaption align="middle">The diagram we followed when putting the mesh elements into code.</figcaption>
+        </td>
+    </div>
+
+    <div align="middle">
+        <td align="middle">
+            <img src="images/teapotbefore.png" align="middle" width="700px"/>
+            <figcaption align="middle">Default teapot model.</figcaption>
+        </td>
+    </div>
+
+    <div align="middle">
+        <td align="middle">
+            <img src="images/flipped.png" align="middle" width="700px"/>
+            <figcaption align="middle">Teapot model after a few edge flips on the surface.</figcaption>
+        </td>
+    </div>
+
+    <h3 align="middle">Part 5: Half-edge split</h3>
+    We implemented the edge split operation by first storing different variables for each element in the mesh. We then
+    wrote down which new elements needed to be created and instantiated them. We went through each of the new vertices,
+    faces, and edges and set their halfedges to the relevant halfedges. To add the new vertex, we took the parameter
+    edge e0 and changed one of its vertices to be the new vertex. We then took the halfedges of e0 and modified them so
+    that they were still the halfedges of e0, but only between the original vertex of e0 and the new vertex. We
+    reassigned the pointers of all modified halfedges according to their new positions.<br/><br/>
+
+    While we were debugging, naming each of the edge/face/vertex variables with clear names (e.g. ab for an edge between
+    a and b) helped significantly.
+
+    <div align="middle">
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="images/Capture%20d’écran%202022-02-28%20à%2014.12.36.png" align="middle" width="350px"/>
+                    <figcaption align="middle">Teapot with no edits.</figcaption>
+                </td>
+                <td>
+                    <img src="images/Capture%20d’écran%202022-02-28%20à%2014.12.44.png" align="middle" width="350px"/>
+                    <figcaption align="middle">Teapot with edge splits.</figcaption>
+                </td>
+                <td>
+                    <img src="images/Capture%20d’écran%202022-02-28%20à%2014.13.32.png" align="middle" width="350px"/>
+                    <figcaption align="middle">Teapot with edge splits and flips.</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h3 align="middle">Part 6: Loop subdivision for mesh upsampling</h3>
+    We implemented the loop subdivision by first iterating through every edge in the mesh and calculating the new
+    positions for each of its endpoints as well as the new vertex to be placed at its midpoint. We then iterated again
+    through the edges of the mesh and split all edges that were not new edges. We also updated the positions of the
+    newly created vertices in this step. Since splitting an edge added new edges onto the end of the mesh, we broke out
+    of the loop as soon as we discovered the first new edge. We then iterated again through the edges and for each new
+    edge in the vertex, we checked if it was connecting an old vertex and a new vertex and if so, we flipped it.
+    <br/><br/>
+
+    To update the original vertices, we iterated through each vertex and if it was not a new vertex, we updated its
+    position to the new position stored within it. Finally, to facilitate future subdivisions, we set the isNew variable
+    for each edge and vertex to false.
+
+
+    <h4> Smoothing effect </h4>
+    <p>One thing to notice is that when doing loop subdivision, sharp edges and corners quickly "smooth out" and become level with the
+        rest of the mesh. Here's an example on a modified icosahedron: </p>
+    <div align="middle">
+    <td>
+        <img src="images/ico1.png" align="middle" width="550px"/>
+        <figcaption align="middle">Default mesh; no loop subdivision, sharp edges present. </figcaption>
+    </td>
+    <td>
+        <img src="images/icoSmooth.png" align="middle" width="550px"/>
+        <figcaption align="middle">Loop subdivision applied once; sharp components become level with the rest of the mesh, smoothing present</figcaption>
+    </td>
+    <td>
+        <img src="images/icoSmooth2.png" align="middle" width="550px"/>
+        <figcaption align="middle">Loop subdivision applied twice. Significantly smoothed compared to default mesh; features from default mesh far less apparent, only distinguishing feature is a flat area </figcaption>
+    </td>
+        <td>
+            <img src="images/split.png" align="middle" width="550px"/>
+            <figcaption align="middle">We can preserve the features a bit more if we do some pre-splitting. I split the edge in the "canyon" at the top of the icosahedron, then applied loop subdivision applied twice. This appears to have preserved slightly more of the "canyon" than the non-split case, as more variation in depth can be seen. </figcaption>
+        </td>
+    </div>
+
+    <h4> Asymmetry effect on cube.dae </h4>
+    Note that when we loop subdivide a cube mesh, it becomes asymmetric as shown:
+    <div align="middle">
+        <td>
+            <img src="images/cube1.png" align="middle" width="550px"/>
+            <figcaption align="middle">Default cube mesh</figcaption>
+        </td>
+        <td>
+            <img src="images/cube2.png" align="middle" width="550px"/>
+            <figcaption align="middle">Loop subdivision applied once, notice slight asymmetries developing</figcaption>
+        </td>
+        <td>
+            <img src="images/cube2new.png" align="middle" width="550px"/>
+            <figcaption align="middle">Loop subdivision applied twice; becoming slightly more asymmetric.</figcaption>
+        </td>
+    </div>
+
+    <h4> Creating symmetry </h4>
+    To cause the mesh to be symmetric under loop subdivision, we can flip the bottom edge of the default mesh like so:
+
+    <div align="middle">
+        <td>
+            <img src="images/preflip.png" align="middle" width="550px"/>
+            <figcaption align="middle">This causes the mesh elements themselves to be completely symmetric; before, the edges were not symmetric</figcaption>
+        </td>
+        <td>
+            <img src="images/loop1.png" align="middle" width="550px"/>
+            <figcaption align="middle">Mesh after one loop subdivision.</figcaption>
+        </td>
+        <td>
+            <img src="images/loop2.png" align="middle" width="550px"/>
+            <figcaption align="middle">Opposite end of the mesh after one loop subdivision; notice how the geometry of the surface repeats.</figcaption>
+        </td>
+    </div>
+
+    <h2 align="middle">Section III: Optional Extra Credit</h2>
+    <p>If you are not participating in the optional mesh competition, don't worry about this section!</p>
+
+    <h3 align="middle">Part 7: Design your own mesh!</h3>
+
+</body>
+
 </html>
