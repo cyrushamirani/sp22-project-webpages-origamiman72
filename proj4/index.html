@@ -1,7 +1,321 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 4 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 Mesh Editor</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2017</h1>
+<h1 align="middle">Project 4: Cloth Simulator</h1>
+<h2 align="middle">Abhik Ahuja, Cyrus Hamirani, CS184-cloth-72294</h2>
+
+<br><br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+<p>In this project, we learned about physical simulation as a means of generating computer graphics. Specifically, we implemented a spring-model of a cloth in code
+based off real cloth physics. Our representation of the cloth used point masses and springs as a basis for the physics. We then implemented forces acting on the point masses, like outside forces
+such as gravity as well as spring forces to give the cloth interaction with itself. We then simulated the physics of the model at each timestep to give the cloth motion.
+Along the way, we implemented cloth collisions with itself and other objects. In the final part of the project, we used GLSL to implement OpenGL shaders for the cloth. We implemented multiple shaders,
+ranging from a mirror shader to a bump shader.</p>
+
+<h2 align="middle">Part I: Masses and springs</h2>
+    <h3> Wireframe screenshots </h3>
+    <p> Here are some screenshots displaying the structure of the cloth model. </p>
+    <table>
+        <tr>
+            <td>
+                <img src="images/p1.1.png" width="400px"/>
+                <figcaption>Cloth structure with diffuse shading, all springs enabled</figcaption>
+            </td>
+            <td>
+                <img src="images/p1.2.png" width="400px"/>
+                <figcaption>Cloth structure with wireframe visible, all springs enabled</figcaption>
+            </td>
+            <td>
+                <img src="images/p1.3.png" width="400px"/>
+                <figcaption>Back of cloth structure with diffuse shading, all springs enabled</figcaption>
+            </td>
+            <td>
+                <img src="images/p1.4.png" width="400px"/>
+                <figcaption>Back of cloth structure with wireframe visible, all springs enabled</figcaption>
+            </td>
+        </tr>
+    </table>
+
+    <table>
+        <tr>
+            <td>
+                <img src="images/noshear.png" width="400px"/>
+                <figcaption>Cloth wireframe with all springs except shearing enabled</figcaption>
+            </td>
+            <td>
+                <img src="images/onlyshear.png" width="400px"/>
+                <figcaption>Cloth wireframe with only shearing springs enabled</figcaption>
+            </td>
+            <td>
+                <img src="images/all.png" width="400px"/>
+                <figcaption>Cloth wireframe with all springs enabled</figcaption>
+            </td>
+        </tr>
+    </table>
+
+<h2 align="middle">Part II: Simulation via numerical integration</h2>
+    <h3>Varying the spring constant</h3>
+
+    <p> When we set the spring constant to a low value, such as 100N/m, an interesting effect occurs in the cloth:
+    there is a noticeable rippling effect throughout the cloth, almost as though it is a fluid. Here is a picture of the effect: </p>
+    <div align="middle">
+                <img src="images/lowKs.png" width="400px"/>
+                <figcaption>Cloth with spring constant set to 100 N/m. Observe the ripple effect present in the cloth.</figcaption>
+    </div>
+
+    <p>Granted, this rippling effect can be seen in the cloth at the default parameter for the spring constant (5000 N/m), however it dissipates
+    almost immediately, unlike in the 100 N/m case. </p>
+
+    <p> Setting the spring constant to 100,000 N/m, we can observe an opposite effect: the cloth becomes a lot more stiff in its movements, and its final
+    resting state appears motionless. The bulge that forms on the top of the cloth is also slightly higher and smoother.</p>
+    <div align="middle">
+        <img src="images/highKs.png" width="400px"/>
+        <figcaption>Cloth with spring constant set to 100,000 N/m.</figcaption>
+    </div>
+
+    <h3> Varying the density parameter</h3>
+    <p> Reducing the density parameter from its default value of 15 g/cm^2 to 1 g/cm^2 produces a result that is very similar to
+    increasing the spring coefficient value. The cloth moves a lot more stiffly, and the bulge that appears in the final resting position of the cloth
+    is far smoother than the default.</p>
+    <div align="middle">
+        <img src="images/lowden.png" width="400px"/>
+        <figcaption>Cloth with density parameter set to 1 g/cm^2.</figcaption>
+    </div>
+
+    <p> Similarly, increasing the density parameter significantly results in nearly identical effects to reducing the spring constant. Upon increasing the
+    density parameter from its default value of 15 g/cm^2 to 1000 g/cm^2, we can observe the same rippling and lack of stiffness that we saw in the case of a low spring constant.</p>
+    <div align="middle">
+        <img src="images/highden.png" width="400px"/>
+        <figcaption>Cloth with density parameter set to 100 g/cm^2.</figcaption>
+    </div>
+
+    <h3> Varying the damping parameter </h3>
+    <p>Setting the damping parameter to 0%, we can see that the cloth's movement takes far longer to converge than normal (if it converges at all).
+    The cloth falls very quickly and continuously rocks back and forth, with large rippling effects in the cloth's structure visible.</p>
+
+    <table>
+        <tr>
+            <td>
+                <img src="images/damp1.png" width="400px"/>
+                <figcaption>Cloth with 0% damping parameter set in its continual rocking motion</figcaption>
+            </td>
+            <td>
+                <img src="images/damp2.png" width="400px"/>
+                <figcaption>Another picture of the Cloth undergoing its continual rocking motion</figcaption>
+            </td>
+        </tr>
+    </table>
+
+    <p>Increasing the damping factor to 100%, an expectedly opposite outcome occurs: the cloth falls from its initial state very slowly. It almost immediately converges to its final motionless resting state
+    when the bottom of the cloth completes its fall. No rippling effects are present in the cloth.</p>
+    <div align="middle">
+        <img src="images/highdamp.png" width="400px"/>
+        <figcaption>Cloth in its final, motionless resting state with a 100% damping factor.</figcaption>
+    </div>
+
+    <h3 align="middle"> scenes/pinned4 </h3>
+    <div align="middle">
+        <img src="images/pinned4.png" width="400px"/>
+        <figcaption>Cloth from scenes/pinned4 in its final resting state with default parameters.</figcaption>
+    </div>
+
+    <h2 align="middle"> Part III: Object collision</h2>
+
+    <p> Here are some screenshots of the cloth (using Phong shading) resting on the sphere with different parameters:</p>
+
+    <div align="middle">
+        <img src="images/sphere500.png" width="400px"/>
+        <figcaption>Cloth on sphere with spring constant = 500N/m.</figcaption>
+    </div>
+
+    <div align="middle">
+        <img src="images/spheredef.png" width="400px"/>
+        <figcaption>Cloth on sphere with spring constant = 5000N/m.</figcaption>
+    </div>
+
+    <div align="middle">
+        <img src="images/sphere50000.png" width="400px"/>
+        <figcaption>Cloth on sphere with spring constant = 50000N/m.</figcaption>
+    </div>
+
+    <p> As the spring constant increases, so too does the "stiffness" of the cloth, resulting in there appearing to be less and less creases
+    in the cloth. </p>
+
+    <p> And here is the cloth lying motionless on the plane in scene/plane.json.</p>
+
+    <div align="middle">
+        <img src="images/plane.png" width="400px"/>
+    </div>
+
+
+<h2 align="middle">Part IV: Self Collisions</h2>
+    <h3>Self Collision Screenshots</h3>
+    <table>
+        <tr>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2015.02.58.png" width="400px"/>
+                <figcaption>Beginning of Self Collision</figcaption>
+            </td>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2015.02.46.png" width="400px"/>
+                <figcaption>Middle of Self Collision</figcaption>
+            </td>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2015.03.43.png" width="400px"/>
+                <figcaption>End of Self Collision</figcaption>
+            </td>
+        </tr>
+    </table>
+    <h3>Varying Density</h3>
+    <table>
+        <tr>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2015.12.00.png" width="400px"/>
+                <figcaption>Density = 5 g/cm^2</figcaption>
+            </td>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2015.03.43.png" width="400px"/>
+                <figcaption>Density = 15 g/cm^2</figcaption>
+            </td>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2015.10.57.png" width="400px"/>
+                <figcaption>Density = 30 g/cm^2</figcaption>
+            </td>
+        </tr>
+    </table>
+    <p>It seems that denser materials bunch up more and are less likely to move upon falling.</p>
+    <h3>Varying ks</h3>
+    <table>
+        <tr>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2015.12.28.png" width="400px"/>
+                <figcaption>ks = 1000 N/m</figcaption>
+            </td>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2015.12.11.png" width="400px"/>
+                <figcaption>ks = 5000 N/m</figcaption>
+            </td>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2015.12.45.png" width="400px"/>
+                <figcaption>ks = 10000 N/m</figcaption>
+            </td>
+        </tr>
+    </table>
+    <p>The larger that ks is, the more "flat" the cloth stays. For smaller ks, the cloth is more willing to bend and bunch up.</p>
+
+<h2 align="middle">Part V: Shading</h2>
+    <p>A shader program is a program that decides how to render each pixel of an object. A vertex shader processes the vertices of an object and then a fragment shader takes those values, interpolates them and outputs a final color based on the interpolated values.</p>
+    <h3>Blinn Phong shading</h3>
+    <p>The Blinn Phong adds together several different shading effects, including an ambient term to represent the ambient lighting in a room, a diffuse term to represent the base color/texture of the object, and a specular term to add reflections. The sum of these together constitute the Blinn-Phong shading model.</p>
+    <table>
+        <tr>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2017.25.21.png" width="300px"/>
+                <figcaption>Ambient Shading only</figcaption>
+            </td>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2017.26.03.png" width="300px"/>
+                <figcaption>Diffuse shading only</figcaption>
+            </td>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2017.26.33.png" width="300px"/>
+                <figcaption>Specular shading only</figcaption>
+            </td>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2017.26.58.png" width="300px"/>
+                <figcaption>Complete Blinn Phong model</figcaption>
+            </td>
+        </tr>
+    </table>
+    <h3>Texture mapping</h3>
+    <img src="images/Capture%20d’écran%202022-04-15%20à%2018.05.30.png" width="300px"/>
+    <figcaption>Texture mapping shader with custom shader.</figcaption>
+
+    <h3>Bump and displacement mapping</h3>
+    <table>
+        <tr>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2018.10.09.png" width="300px"/>
+                <figcaption>Bump shaded sphere</figcaption>
+            </td>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2018.10.15.png" width="300px"/>
+                <figcaption>Bump shaded cloth</figcaption>
+            </td>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2018.11.24.png" width="300px"/>
+                <figcaption>Displacement mapped sphere</figcaption>
+            </td>
+        </tr>
+    </table>
+    <p>The bump shading is a visually effective way of introducing bumps into a shape without the extra computation of actually modifying the mesh. It is quite convincing but a bit innacurate at certain angles since you can see that the surface of the sphere is still smooth at the edges. Displacement mapping is much more accurate but also requires extra computation to modify the mesh.</p>
+
+
+    <table>
+        <tr>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2018.16.30.png" width="300px"/>
+                <figcaption>Bump shaded sphere with a coarse sphere</figcaption>
+            </td>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2018.16.38.png" width="300px"/>
+                <figcaption>Displacement mapped sphere with a coarse sphere</figcaption>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2018.17.12.png" width="300px"/>
+                <figcaption>Bump shaded sphere with a fine sphere</figcaption>
+            </td>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2018.17.17.png" width="300px"/>
+                <figcaption>Displacement mapped sphere with a fine sphere</figcaption>
+            </td>
+        </tr>
+    </table>
+    <p>The bump map does not get affected as much by the coarseness of the mesh since it does not modify the mesh, only modify the normals of each sample. Displacement mapping looks much better with a finer sphere since is able to modify the mesh at more points and create a more fine displacement.</p>
+
+    <h3>Mirror shading</h3>
+    <table>
+        <tr>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2018.52.14.png" width="300px"/>
+                <figcaption>Mirror shaded sphere</figcaption>
+            </td>
+            <td>
+                <img src="images/Capture%20d’écran%202022-04-15%20à%2018.52.33.png" width="300px"/>
+                <figcaption>Mirror shaded cloth</figcaption>
+            </td>
+        </tr>
+    </table>
+
+    <a href="https://cal-cs184-student.github.io/sp22-project-webpages-origamiman72/proj4/index.html">Website link: https://cal-cs184-student.github.io/sp22-project-webpages-origamiman72/proj4/index.html</a>
+</div>
+</body>
 </html>
